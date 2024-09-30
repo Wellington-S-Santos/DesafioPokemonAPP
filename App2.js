@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, Image, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
@@ -38,40 +37,26 @@ function InicioScreen({ navigation }) {
         value={name}
         onChangeText={setName}
       />
-      <Button title="Iniciar" onPress={() => navigation.navigate('Jogo')} />
-    
+      <Button title="Iniciar" onPress={handleInicio} />
+      {/* Adicionar o botão para navegar diretamente para a tela de Jogo */}
+      <Button
+        title="Jogar Sem Inserir Nome"
+        onPress={() => navigation.navigate('Jogo')}
+      />
       {error && <Text style={styles.error}>{error}</Text>}
     </View>
   );
 }
 
-function JogoScreen({ route, navigation }) {
-  // Estados para armazenar os dados recebidos da API
-  const [name, getName] = useEffect();
-  const [nameP1, getNameP1, setNameP1] = useState(null);
-  const [nameP2, getNameP2, setNameP2] = useState(null);
-  const [nameP3, getNameP3, setNameP3] = useState(null);
-  const [nameP4, getNameP4, setNameP4] = useState(null);
-  const [imagenP, getImagenP] = useState(null);
-  const [jogoError, setJogoError] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Função para buscar os dados da API
-  const fetchPokemonData = async () => {
+  const handleProximo = async () => {
     try {
-      const response = await fetch('http://localhost:3000/jogo?name=charmander'); // Endpoint da API
-      const data = await response.json(); // Convertendo a resposta para JSON
-
-      // Armazenando os dados no estado
-      getNameP1(data.nomesAleatorios[0]);
-      getNameP2(data.nomesAleatorios[1]);
-      getNameP3(data.nomesAleatorios[2]);
-      getNameP4(data.nomesAleatorios[3]);
-      getImagenP(data.imagem); 
-      setIsLoading(false); 
+      setJogoError(null); // Reset error
+      const response = await fetch(`http://192.168.0.113:3000/jogo?name=${name || 'anônimo'}`);
+      const data = await response.json();
 
       if (response.ok) {
-        setJogoResult(data); 
+        setJogoResult(data); // Atualiza o resultado do jogo
       } else {
         setJogoError(data.error);
         setJogoResult(null);
@@ -82,24 +67,26 @@ function JogoScreen({ route, navigation }) {
     }
   };
 
-  
+  // Faz a primeira chamada quando a tela de jogo for aberta
   useEffect(() => {
-    JogoScreen();
+    handleProximo();
   }, []);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Qual nome desse pokemon: </Text>
-      
-      <Image style={styles.image} source={{getImagenP}} />
-          
+      {jogoResult && (
+        <>
+          <Text style={styles.title}>Resultado do Jogo</Text>
+          <Image style={styles.image} source={{ uri: jogoResult.imagem }} />
+          <Text>Acertos: {jogoResult.qtdAcertos}</Text>
+          <Text>Erros: {jogoResult.qtdErros}</Text>
           <View style={styles.namesContainer}>
-            {jogoResult.nomesAleatorios.map((nameP1, index) => (
-              <Button key={index} title={nome} onPress={() => alert(`Você escolheu: ${nameP1}`)} />
+            {jogoResult.nomesAleatorios.map((nome, index) => (
+              <Button key={index} title={nome} onPress={() => alert(`Você escolheu: ${nome}`)} />
             ))}
           </View>
-        
-      
+        </>
+      )}
       {jogoError && <Text style={styles.error}>{jogoError}</Text>}
 
       {/* Botão para jogar novamente */}
